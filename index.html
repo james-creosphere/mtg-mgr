@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="vanta-background"></div>
+    
+    <div class="container">
+        <div class="main-clock-section">
+            <div class="clock-display" id="clock">
+                <div class="time-display" id="timeDisplay">00:00</div>
+                <div class="time-label" id="timeLabel">Meeting Time</div>
+            </div>
+            
+            <div class="speaker-section">
+                <div class="speaker-time" id="speakerTime">00:00</div>
+                <div class="speaker-name" id="speakerName">No Speaker</div>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="meeting-time-input">
+                <label for="meetingTime">Full Meeting Time (minutes):</label>
+                <input type="number" id="meetingTime" value="60" min="1">
+            </div>
+
+            <div class="intro-outro-section">
+                <div class="intro-section">
+                    <label for="introTime">Intro Time (minutes):</label>
+                    <input type="number" id="introTime" value="5" min="0">
+                    <input type="text" id="introName" placeholder="Intro Name" value="Introduction">
+                </div>
+                <div class="outro-section">
+                    <label for="outroTime">Outro Time (minutes):</label>
+                    <input type="number" id="outroTime" value="5" min="0">
+                    <input type="text" id="outroName" placeholder="Outro Name" value="Conclusion">
+                </div>
+            </div>
+
+            <div class="participants-section">
+                <h3>Participants</h3>
+                <div class="participants-list" id="participantsList">
+                    <!-- Participants will be added here -->
+                </div>
+                <div class="add-participant">
+                    <input type="text" id="newParticipant" placeholder="Enter participant name">
+                    <button id="addParticipantBtn">Add</button>
+                </div>
+                <div class="time-per-person" id="timePerPerson">
+                    Time per person: 0 minutes
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="startBtn" class="start-btn">Start Meeting</button>
+                <button id="pauseBtn" class="pause-btn" style="display: none;">Pause</button>
+                <button id="resetBtn" class="reset-btn">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.birds.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
