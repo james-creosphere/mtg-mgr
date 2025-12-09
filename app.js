@@ -2,27 +2,96 @@
 let vantaEffect;
 let timerInterval = null;
 
-window.addEventListener('DOMContentLoaded', () => {
-    vantaEffect = VANTA.BIRDS({
+// Random color generator
+function randomColor() {
+    return Math.floor(Math.random() * 0xffffff);
+}
+
+// Initialize Vanta.js with random effect
+function initVanta() {
+    // Clean up existing effect
+    if (vantaEffect && vantaEffect.destroy) {
+        vantaEffect.destroy();
+    }
+    
+    const effects = ['birds', 'waves', 'fog', 'rings', 'dots'];
+    const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+    
+    const baseConfig = {
         el: "#vanta-background",
         mouseControls: true,
         touchControls: true,
         gyroControls: false,
         minHeight: 200.00,
         minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        backgroundColor: 0x0a0e27,
-        color1: 0x1e3a8a,
-        color2: 0x3b82f6,
-        birdSize: 1.00,
-        wingSpan: 20.00,
-        speedLimit: 3.00,
-        separation: 19.00,
-        alignment: 19.00,
-        cohesion: 19.00,
-        quantity: 3.00
-    });
+        scale: Math.random() * 0.5 + 0.75,
+        scaleMobile: Math.random() * 0.5 + 0.75,
+        backgroundColor: randomColor()
+    };
+    
+    switch(randomEffect) {
+        case 'birds':
+            vantaEffect = VANTA.BIRDS({
+                ...baseConfig,
+                color1: randomColor(),
+                color2: randomColor(),
+                birdSize: Math.random() * 0.5 + 0.75,
+                wingSpan: Math.random() * 10 + 15,
+                speedLimit: Math.random() * 2 + 2,
+                separation: Math.random() * 10 + 15,
+                alignment: Math.random() * 10 + 15,
+                cohesion: Math.random() * 10 + 15,
+                quantity: Math.random() * 2 + 2
+            });
+            break;
+        case 'waves':
+            vantaEffect = VANTA.WAVES({
+                ...baseConfig,
+                color: randomColor(),
+                shininess: Math.random() * 50 + 20,
+                waveHeight: Math.random() * 10 + 10,
+                waveSpeed: Math.random() * 0.5 + 0.5,
+                zoom: Math.random() * 0.5 + 0.75
+            });
+            break;
+        case 'fog':
+            vantaEffect = VANTA.FOG({
+                ...baseConfig,
+                highlightColor: randomColor(),
+                midtoneColor: randomColor(),
+                lowlightColor: randomColor(),
+                baseColor: randomColor(),
+                blurFactor: Math.random() * 0.3 + 0.4,
+                speed: Math.random() * 0.5 + 0.5,
+                zoom: Math.random() * 0.5 + 0.75
+            });
+            break;
+        case 'rings':
+            vantaEffect = VANTA.RINGS({
+                ...baseConfig,
+                backgroundColor: randomColor(),
+                color: randomColor(),
+                backgroundAlpha: Math.random() * 0.3 + 0.2
+            });
+            break;
+        case 'dots':
+            vantaEffect = VANTA.DOTS({
+                ...baseConfig,
+                color: randomColor(),
+                color2: randomColor(),
+                size: Math.random() * 1 + 1.5,
+                spacing: Math.random() * 20 + 20
+            });
+            break;
+    }
+}
+
+function randomizeBackground() {
+    initVanta();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    initVanta();
 });
 
 // State management
@@ -44,7 +113,6 @@ let state = {
 
 // DOM elements
 const elements = {
-    clock: document.getElementById('clock'),
     timeDisplay: document.getElementById('timeDisplay'),
     timeLabel: document.getElementById('timeLabel'),
     speakerTime: document.getElementById('speakerTime'),
@@ -60,7 +128,8 @@ const elements = {
     timePerPerson: document.getElementById('timePerPerson'),
     startBtn: document.getElementById('startBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
-    resetBtn: document.getElementById('resetBtn')
+    resetBtn: document.getElementById('resetBtn'),
+    randomizeBgBtn: document.getElementById('randomizeBgBtn')
 };
 
 // Initialize
@@ -94,6 +163,7 @@ function init() {
     elements.startBtn.addEventListener('click', startMeeting);
     elements.pauseBtn.addEventListener('click', pauseMeeting);
     elements.resetBtn.addEventListener('click', resetMeeting);
+    elements.randomizeBgBtn.addEventListener('click', randomizeBackground);
 }
 
 function updateMeetingTime() {
@@ -145,19 +215,76 @@ function removeParticipant(index) {
     calculateTimePerPerson();
 }
 
+function moveParticipantUp(index) {
+    if (index === 0) return;
+    const temp = state.participants[index];
+    state.participants[index] = state.participants[index - 1];
+    state.participants[index - 1] = temp;
+    renderParticipants();
+}
+
+function moveParticipantDown(index) {
+    if (index === state.participants.length - 1) return;
+    const temp = state.participants[index];
+    state.participants[index] = state.participants[index + 1];
+    state.participants[index + 1] = temp;
+    renderParticipants();
+}
+
 function renderParticipants() {
     elements.participantsList.innerHTML = '';
     
     state.participants.forEach((participant, index) => {
         const item = document.createElement('div');
         item.className = 'participant-item';
+        item.draggable = !state.isRunning;
         if (state.isRunning && state.currentPhase === 'participant' && state.currentParticipantIndex === index) {
             item.classList.add('active');
         }
         
+        // Drag and drop handlers
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', index);
+            item.classList.add('dragging');
+        });
+        
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+        });
+        
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            item.classList.add('drag-over');
+        });
+        
+        item.addEventListener('dragleave', () => {
+            item.classList.remove('drag-over');
+        });
+        
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            const toIndex = index;
+            
+            if (fromIndex !== toIndex) {
+                const [movedItem] = state.participants.splice(fromIndex, 1);
+                state.participants.splice(toIndex, 0, movedItem);
+                renderParticipants();
+            }
+        });
+        
+        const reorderButtons = state.isRunning ? '' : `
+            <div class="reorder-buttons">
+                <button class="move-btn move-up" onclick="moveParticipantUp(${index})" ${index === 0 ? 'disabled' : ''} title="Move up">▲</button>
+                <button class="move-btn move-down" onclick="moveParticipantDown(${index})" ${index === state.participants.length - 1 ? 'disabled' : ''} title="Move down">▼</button>
+            </div>
+        `;
+        
         item.innerHTML = `
             <span class="participant-name">${participant.name}</span>
             <span class="participant-time">${participant.allocatedMinutes}:${String(Math.floor(participant.allocatedSeconds / 60)).padStart(2, '0')}</span>
+            ${reorderButtons}
             <button class="remove-participant" onclick="removeParticipant(${index})">Remove</button>
         `;
         
@@ -379,8 +506,10 @@ function updateDisplay() {
     }
 }
 
-// Make removeParticipant available globally for onclick handlers
+// Make functions available globally for onclick handlers
 window.removeParticipant = removeParticipant;
+window.moveParticipantUp = moveParticipantUp;
+window.moveParticipantDown = moveParticipantDown;
 
 // Initialize on load
 init();
